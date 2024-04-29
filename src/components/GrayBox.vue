@@ -36,7 +36,7 @@
 
 
 <script>
-import axios from 'axios';
+// import axios from 'axios';
 
 export default {
   data() {
@@ -47,61 +47,64 @@ export default {
     };
   },
   methods: {
-    async addNumber() {
-  if (this.newNumber.trim() !== '') {
-    try {
-      const response = await axios.post(
-        'http://176.98.237.4/apiproject/api/v1/customer/',
-        {
+    addNumber() {
+      if (this.newNumber.trim() !== '') {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'http://176.98.237.4/apiproject/api/v1/customer/');
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', 'Token 471619b0d8d6d5e58d9178e46775c2b90d8f1289');
+        xhr.onload = () => {
+          if (xhr.status === 201) {
+            const response = JSON.parse(xhr.responseText);
+            const customerPK = response.pk;
+            this.numberList.push({
+              phoneNumber: this.newNumber.trim(),
+              pk: customerPK
+            });
+            this.newNumber = '';
+          } else {
+            console.error('Error adding number:', xhr.responseText);
+          }
+        };
+        xhr.onerror = () => {
+          console.error('Error adding number:', xhr.responseText);
+        };
+        xhr.send(JSON.stringify({
           fullName: 'Java',
           phoneNumber: this.newNumber.trim(),
           info: 'test'
-        },
-        {
-          headers: {
-            Authorization: 'Token 471619b0d8d6d5e58d9178e46775c2b90d8f1289'
-          }
-        }
-      );
-
-      const customerPK = response.data.pk;
-      
-      this.numberList.push({
-        phoneNumber: this.newNumber.trim(),
-        pk: customerPK
-      });
-
-      this.newNumber = '';
-    } catch (error) {
-      console.error('Error adding number:', error);
-      if (error.response) {
-        console.error('Error Response:', error.response.data);
+        }));
       }
-    }
-  }
-},
-
+    },
     deleteNumber(index) {
       this.numberList.splice(index, 1);
     },
     callNumber(number) {
-  const customer = this.numberList.find(item => item.phoneNumber === number);
-  if (customer) {
-    axios.get(`http://176.98.237.4/apiproject/api/v1/call/${customer.pk}`)
-      .then(response => {
-        console.log("Call initiated successfully:", response);
-        // Optionally, you can handle the response here if needed
-        alert("Call initiated successfully!");
-      })
-      .catch(error => {
-        console.error("Error initiating call:", error);
-        // Optionally, you can handle errors here
-        alert("Failed to initiate call. Please try again later.");
-      });
-  }
-},
-
-
+      const customer = this.numberList.find(item => item.phoneNumber === number);
+      if (customer) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `http://176.98.237.4/apiproject/api/v1/call/${customer.pk}/`);
+        xhr.onload = () => {
+          console.log('Status:', xhr.status);
+          if (xhr.status === 200) {
+            console.log("Call initiated successfully:", xhr.responseText);
+            alert("Call initiated successfully!");
+          } else if (xhr.status == 202){
+            console.error("it is something else. Trying initiating call:", xhr.responseText);
+            alert("Process started. Call is being initiated");
+          } 
+          else {
+            console.error("it is something else. Trying initiating call:", xhr.responseText);
+            alert("Trying to initiate call.");
+          }
+        };
+        xhr.onerror = () => {
+          console.error("Error initiating call:", xhr.responseText);
+          alert("Failed to initiate call. Please try again later.");
+        };
+        xhr.send();
+      }
+    },
     showGrayAlert() {
       alert('Belgilangan raqamlarga qongiroq qilindi!');
     },
